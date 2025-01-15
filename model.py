@@ -1,5 +1,13 @@
 import tensorflow as tf
+from tensorflow.keras import Model  # type: ignore
+from portfolio import Portfolio
 
-v = tf.Variable(1.0)
+class Flat_Agent(Model):
+    def __init__(self):
+        self.action_space = {}
+    
 
-print(v)
+class Top_Level_Agent(Model):
+    def __init__(self, starting_balance: int):
+        self.portfolio = Portfolio(starting_balance)
+        self.action_space = {0, 1, 2} # 0 = HOLD, 1 = BUY, 2 = SELL
