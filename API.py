@@ -13,5 +13,3 @@ def get_ticker(ticker: str) -> dict:
     json = response.json()
     
     return json[0] #Get last day value
-
-print(get_ticker("AMZN"))
