@@ -3,14 +3,15 @@ class Portfolio():
         self.stocks = dict() #Contains {ticker: quantity}
         self.balance = balance
 
+    """
     def get_portfolio_value(self):
         value = 0
 
         for ticker in self.stocks:
-            value+=self.stocks[ticker][0]*self.stocks[ticker][1]
+            value+=self.stocks[ticker]
 
         return value
-    
+    """
     def sell(self, ticker: str, price: int, quantity: int):
         if ticker not in self.stocks or self.stocks[ticker] < quantity: return -1
 
