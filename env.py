@@ -13,14 +13,16 @@ class Env():
         action, ticker, quantity = action_tuple
 
         price = self._get_price(self.date, ticker)
+        self.portfolio.update_prices(ticker, price)
 
+        error = 0
         if action==1:
-            self.portfolio.buy(ticker, price, quantity)
+            error = self.portfolio.buy(ticker, price, quantity)
 
         elif action==2:
-            self.portfolio.sell(ticker, price, quantity)
+            error = self.portfolio.sell(ticker, price, quantity)
 
-        reward =  self.portfolio.balance - self.starting_balance
+        reward =  self.portfolio.get_portfolio_value() + self.portfolio.balance - self.starting_balance if error != -1 else error
 
         next_date = self.get_date_after_t(self.date, 1)
         self.date = next_date
@@ -43,7 +45,7 @@ class Env():
         while(not self.is_valid_date(end_date.strftime("%Y-%m-%d"))):
             end_date+=datetime.timedelta(days=1)
 
-        return end_date
+        return end_date.strftime("%Y-%m-%d")
 
     def is_valid_date(self, date: str):
         nyse = mcal.get_calendar("NYSE")
@@ -51,8 +53,20 @@ class Env():
     
 if __name__ == "__main__":
     date = "2016-12-23"
-    env = Env(1000, date)
+    env = Env(10000, date)
 
-    print(env.step((1, "AMZN", 1)))
+    print(env.step((1, "COST", 1)))
 
+    print(env.portfolio.balance, env.portfolio.stocks)
+
+    print(env.step((1, "AMZN", 2)))
+    
+    print(env.portfolio.balance, env.portfolio.stocks)
+
+    print(env.step((1, "COST", 1)))
+
+    print(env.portfolio.balance, env.portfolio.stocks)
+
+    print(env.step((1, "AMZN", 2)))
+    
     print(env.portfolio.balance, env.portfolio.stocks)
