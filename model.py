@@ -1,26 +1,29 @@
 import tensorflow as tf
 from tensorflow.keras import Model  # type: ignore
 from tensorflow.keras.Layers import Dense, Flatten, Conv2D,Softmax # type: ignore
+import numpy as np
+import random
 import env
 
 class Q_Agent(Model):
     def __init__(self):
         self.action_space = (0, 0) #Tuple values correspond to (mu, sigma) for a Gaussian distribution
-    
+        
 
 class Top_Level_Agent(Model):
-    def __init__(self, stocks: set, env=env.Env):
+    def __init__(self, stocks: set, epsilon: float, env: env.Env):
         super().__init__()
         self.action_space = {0, 1, 2} # 0 = HOLD, 1 = BUY, 2 = SELL
         self.stocks = stocks
         self.env = env
+        self.epsilon = epsilon
 
         self.conv1 = Conv2D(filters=16, kernal_size=(3,3), activation="relu")
         self.conv2 = Conv2D(filters=8, kernal_size=(3,3), activation="relu")
         self.flatten = Flatten()
         self.d1 = Dense(128, activation="relu")
         self.d2 = Dense(64, activation="relu")
-        self.out = Softmax()
+        self.out = Softmax(3)
 
     def call(self, x): #Takes tensor of DxT, corresponding to time-series data
         conv1 = self.conv1(x)
@@ -29,3 +32,16 @@ class Top_Level_Agent(Model):
         d1 = self.d1(flat)
         d2 = self.d2(d1)
         return self.out(d2)
+
+    def take_action(self, data):
+        if np.random.random() <= self.epsilon: 
+            return np.random.choice(self.action_space)
+        
+        action = np.argmax(self(data))
+        return action
+
+    def forward(self):
+        for ticker in self.stocks:
+            data = self.env.get_observation(self.env.date, ticker)
+            output = self(data)
+
