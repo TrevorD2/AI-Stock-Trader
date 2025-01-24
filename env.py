@@ -5,10 +5,15 @@ from portfolio import Portfolio
 
 class Env():
     def __init__(self, balance: int, start_date: str): #start_date takes the form yyyy-mm-dd
+        self.init_params = [balance, start_date]
+        
+    def reset(self):
+        balance, start_date = self.init_params
         self.portfolio = Portfolio(balance)
         self.starting_balance = balance
         self.date = start_date
-
+        return balance, start_date
+    
     def step(self, action_tuple): #action = (action, ticker, quantity)
         action, ticker, quantity = action_tuple
 
@@ -24,10 +29,11 @@ class Env():
 
         reward =  self.portfolio.get_portfolio_value() + self.portfolio.balance - self.starting_balance if error != -1 else error
 
+        return self.date, reward, self.portfolio.balance < 0 #must return observation, reward, terminated
+
+    def end_day(self):
         next_date = self.get_date_after_t(self.date, 1)
         self.date = next_date
-
-        return self.date, reward, self.portfolio.balance < 0 #must return observation, reward, terminated
 
     def get_observation(self, date: str, ticker: str): # Get observation data for that date. PRECONDITION: date satisfies is_valid_date()
         data = API.get_ticker(ticker, date)

@@ -21,5 +21,8 @@ def get_ticker(ticker: str, date: str):
 
     response = requests.get(f"https://api.tiingo.com/tiingo/daily/{ticker}/prices?startDate={date}&endDate={date}&token=acf127c746b3b029d5c57d622cf64f85aed047fe", headers=headers)
     json = response.json()
-    print(json)
+    if type(json) != list: return -1
+    elif len(json) == 0: return -1
+
+    print(f"JSON for {ticker}: ", json)
     return json[0] #Get last day value

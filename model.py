@@ -1,9 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras import Model  # type: ignore
-from tensorflow.keras.Layers import Dense, Flatten, Conv2D,Softmax # type: ignore
+from tensorflow.keras.layers import Dense, Flatten, Conv2D,Softmax # type: ignore
 import numpy as np
-import random
-import env
 
 class Q_Agent(Model):
     def __init__(self):
@@ -11,15 +9,15 @@ class Q_Agent(Model):
         
 
 class Top_Level_Agent(Model):
-    def __init__(self, stocks: set, epsilon: float, env: env.Env):
+    def __init__(self, epsilon: float, epsilon_decay, min_epsilon):
         super().__init__()
-        self.action_space = {0, 1, 2} # 0 = HOLD, 1 = BUY, 2 = SELL
-        self.stocks = stocks
-        self.env = env
+        self.action_space = [0, 1, 2] # 0 = HOLD, 1 = BUY, 2 = SELL
         self.epsilon = epsilon
+        self.epsilon_decay = epsilon_decay
+        self.min_epsilon = min_epsilon
 
-        self.conv1 = Conv2D(filters=16, kernal_size=(3,3), activation="relu")
-        self.conv2 = Conv2D(filters=8, kernal_size=(3,3), activation="relu")
+        self.conv1 = Conv2D(filters=16, kernel_size=(3,3), activation="relu")
+        self.conv2 = Conv2D(filters=8, kernel_size=(3,3), activation="relu")
         self.flatten = Flatten()
         self.d1 = Dense(128, activation="relu")
         self.d2 = Dense(64, activation="relu")
@@ -31,7 +29,9 @@ class Top_Level_Agent(Model):
         flat = self.flatten(conv2)
         d1 = self.d1(flat)
         d2 = self.d2(d1)
-        return self.out(d2)
+        out = self.out(d2)
+        print("OUTPUT OF NETWORK:", out)
+        return out
 
     def take_action(self, data):
         if np.random.random() <= self.epsilon: 
@@ -40,8 +40,13 @@ class Top_Level_Agent(Model):
         action = np.argmax(self(data))
         return action
 
+    def adjust_epsilon(self):
+        if self.epsilon >= self.min_epsilon: 
+            self.epsilon *= self.epsilon_decay
+
+"""
     def forward(self):
         for ticker in self.stocks:
             data = self.env.get_observation(self.env.date, ticker)
             output = self(data)
-
+"""
