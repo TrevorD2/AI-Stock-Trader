@@ -1,5 +1,6 @@
 import API
 import pandas_market_calendars as mcal
+import tensorflow as tf
 import datetime
 from portfolio import Portfolio
 
@@ -36,8 +37,21 @@ class Env():
         self.date = next_date
 
     def get_observation(self, date: str, ticker: str): # Get observation data for that date. PRECONDITION: date satisfies is_valid_date()
-        data = API.get_ticker(ticker, date)
-        return data
+        data = []
+
+        for i in range(10):
+            data.append(list(API.get_ticker(ticker, date).values())[1:])
+            date = env.get_date_after_t(date, -1)
+        
+        for i in range(10):
+            data.append(list(API.get_ticker(ticker, date).values())[1:])
+            date = env.get_date_after_t(date, -5)
+
+        for i in range(10):
+            data.append(list(API.get_ticker(ticker, date).values())[1:])
+            date = env.get_date_after_t(date, -20)
+
+        return tf.convert_to_tensor(data, dtype=tf.float32)
 
     def _get_price(self, date: str, ticker: str):
         return self.get_observation(date, ticker)["open"]
@@ -61,18 +75,8 @@ if __name__ == "__main__":
     date = "2016-12-23"
     env = Env(10000, date)
 
-    print(env.step((1, "COST", 1)))
-
-    print(env.portfolio.balance, env.portfolio.stocks)
-
-    print(env.step((1, "AMZN", 2)))
+    data = env.get_observation(date, "WMT")
     
-    print(env.portfolio.balance, env.portfolio.stocks)
-
-    print(env.step((1, "COST", 1)))
-
-    print(env.portfolio.balance, env.portfolio.stocks)
-
-    print(env.step((1, "AMZN", 2)))
-    
-    print(env.portfolio.balance, env.portfolio.stocks)
+    print(tf.size(data))
+    with open("out.txt", "w") as f:
+        f.write(str(data))

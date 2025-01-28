@@ -9,7 +9,7 @@ def get_ticker(ticker: str) -> dict:
         'Content-Type': 'application/json'
     }
 
-    response = requests.get(f"https://api.tiingo.com/tiingo/daily/{ticker}/prices?token=acf127c746b3b029d5c57d622cf64f85aed047fe", headers=headers)
+    response = requests.get(f"https://api.tiingo.com/tiingo/daily/{ticker}/prices?token=7ce3fcc88a7aea6ca85a7cee38bdbffe6e82b3dd", headers=headers)
     json = response.json()
     
     return json[0] #Get last day value
@@ -19,7 +19,7 @@ def get_ticker(ticker: str, date: str):
         'Content-Type': 'application/json'
     }
 
-    response = requests.get(f"https://api.tiingo.com/tiingo/daily/{ticker}/prices?startDate={date}&endDate={date}&token=acf127c746b3b029d5c57d622cf64f85aed047fe", headers=headers)
+    response = requests.get(f"https://api.tiingo.com/tiingo/daily/{ticker}/prices?startDate={date}&endDate={date}&token=7ce3fcc88a7aea6ca85a7cee38bdbffe6e82b3dd", headers=headers)
     json = response.json()
     if type(json) != list: return -1
     elif len(json) == 0: return -1
