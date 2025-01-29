@@ -29,9 +29,16 @@ class Q_Agent(Model):
 
     #Determines quantity given input observationn
     def take_action(self, x):
+        if np.random.random() <= self.epsilon: 
+            
+
         mu, sigma = self(x)
         quantity = np.random.normal(mu, sigma)
         return quantity
+
+    def adjust_epsilon(self):
+        if self.epsilon >= self.min_epsilon: 
+            self.epsilon *= self.epsilon_decay
 
 class Top_Level_Agent(Model):
     def __init__(self, epsilon: float, epsilon_decay: float, min_epsilon: float):
@@ -62,9 +69,13 @@ class Top_Level_Agent(Model):
 
     def take_action(self, data):
         if np.random.random() <= self.epsilon: 
-            return np.random.choice(self.action_space)
+            action = np.random.choice(self.action_space)
+
         
         action = np.argmax(self(data))
+        quantity = 0
+
+        if action!=0: quantity = self.q_agent(data)
         return action
 
     def adjust_epsilon(self):
