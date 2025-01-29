@@ -24,5 +24,5 @@ def get_ticker(ticker: str, date: str):
     if type(json) != list: return -1
     elif len(json) == 0: return -1
 
-    print(f"JSON for {ticker}: ", json)
+    #print(f"JSON for {ticker}: ", json)
     return json[0] #Get last day value

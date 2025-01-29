@@ -1,7 +1,8 @@
 from env import Env
-from model import Top_Level_Agent
+from model import Agent
+import tensorflow as tf
 
-MAX_TIMESTEPS = 5000
+MAX_TIMESTEPS = 50
 
 stocks = {
     "AMZN",
@@ -17,7 +18,7 @@ balance = 100000 # 100,000
 date = "2000-01-01" #Starting date
 env = Env(balance, date)
 
-tl_agent = Top_Level_Agent(epsilon, epsilon_decay, min_epsilon)
+tl_agent = Agent()
 
 scores = []
 num_timesteps = 0
@@ -31,10 +32,10 @@ while num_timesteps <= MAX_TIMESTEPS:
     while not done and num_timesteps <= MAX_TIMESTEPS:
 
         for ticker in stocks:
-            data = env.get_observation(env.date, ticker)
-            if data == -1: continue
-            output = tl_agent.take_action(data)
-            day, reward, done = env.step(output, ticker, 1)
+            data = tf.random.uniform(shape=(1, 1, 10, 30))
+            #if data == -1: continue
+            action, q = tl_agent(data)
+            day, reward, done = env.step((action, ticker, q))
 
             if done: break
 
