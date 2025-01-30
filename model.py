@@ -2,6 +2,7 @@ import tensorflow as tf
 from tensorflow.keras import Model  # type: ignore
 from tensorflow.keras.layers import Dense, Flatten, Conv2D, Softmax # type: ignore
 import numpy as np
+import math
 
 class ConvLayer(Model):
     def __init__(self, filters: int, kernal_size: tuple, activation: str, filter_multiplier=1):
@@ -36,8 +37,10 @@ class Q_Agent(Model):
 
     #Determines quantity given input observationn
     def take_action(self, x, max_shares: int):
-        mu, sigma = self(x)
+        li = self(x).numpy().tolist()
+        mu, sigma = li[0]
         mu*=max_shares
+        sigma*=math.sqrt(max_shares)
         quantity = np.random.normal(mu, sigma) + np.random.normal(0, self.noise_stdev)
         return int(max(quantity, 0))
 
@@ -92,9 +95,9 @@ class Agent(Model):
     def call(self, x):
         flatconv = self.conv(x)
 
-        action = self.action_agent(flatconv)
+        action = self.action_agent.take_action(flatconv)
 
-        quantity = self.q_agent(flatconv)
+        quantity = self.q_agent.take_action(flatconv, 100)
 
         return (action, quantity)
     

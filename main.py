@@ -5,9 +5,7 @@ import tensorflow as tf
 MAX_TIMESTEPS = 50
 
 stocks = {
-    "AMZN",
-    "COST",
-    "NVDA"
+    "AMZN"
 }
 
 epsilon = 0.3
@@ -15,7 +13,8 @@ epsilon_decay = 0.99
 min_epsilon = 0.05
 
 balance = 100000 # 100,000
-date = "2000-01-01" #Starting date
+date = "2001-01-03" #Starting date
+
 env = Env(balance, date)
 
 tl_agent = Agent()
@@ -32,8 +31,7 @@ while num_timesteps <= MAX_TIMESTEPS:
     while not done and num_timesteps <= MAX_TIMESTEPS:
 
         for ticker in stocks:
-            data = tf.random.uniform(shape=(1, 1, 10, 30))
-            #if data == -1: continue
+            data = env.get_observation(env.date, ticker)
             action, q = tl_agent(data)
             day, reward, done = env.step((action, ticker, q))
 
@@ -44,8 +42,11 @@ while num_timesteps <= MAX_TIMESTEPS:
         env.end_day()
         num_timesteps+=1
         tl_agent.adjust_epsilon()
+        print("ENDED DAY:", num_timesteps, env.date, score)
+        print(f"Portfolio: {env.portfolio.get_portfolio_value()}, Balance: {env.portfolio.balance}, Stocks: {env.portfolio.stocks}, Prices: {env.portfolio.current_prices}")
 
     scores.append(score)
     num_episodes+=1
 
-    print(f"Episode: {num_episodes}, score: {score}, epsilon: {tl_agent.epsilon}")
+    print(f"Episode: {num_episodes}, score: {score}, epsilon: {tl_agent.action_agent.epsilon}")
+    print(f"Portfolio: {env.portfolio.get_portfolio_value()}, Balance: {env.portfolio.balance}, Stocks: {env.portfolio.stocks}, Prices: {env.portfolio.current_prices}")

@@ -3,6 +3,7 @@ import pandas_market_calendars as mcal
 import tensorflow as tf
 import datetime
 from portfolio import Portfolio
+import json
 
 class Env():
     def __init__(self, balance: int, start_date: str): #start_date takes the form yyyy-mm-dd
@@ -38,23 +39,32 @@ class Env():
 
     def get_observation(self, date: str, ticker: str): # Get observation data for that date. PRECONDITION: date satisfies is_valid_date()
         data = []
+        
+        with open(f"{ticker}_stock.json", "r") as f:
+            rawdata = json.load(f)
 
         for i in range(10):
-            data.append(list(API.get_ticker(ticker, date).values())[1:])
-            date = env.get_date_after_t(date, -1)
+            data.append(list(rawdata[date].values())[1:])
+            date = self.get_date_after_t(date, -1)
         
         for i in range(10):
-            data.append(list(API.get_ticker(ticker, date).values())[1:])
-            date = env.get_date_after_t(date, -5)
+            data.append(list(rawdata[date].values())[1:])
+            date = self.get_date_after_t(date, -5)
 
         for i in range(10):
-            data.append(list(API.get_ticker(ticker, date).values())[1:])
-            date = env.get_date_after_t(date, -20)
+            data.append(list(rawdata[date].values())[1:])
+            date = self.get_date_after_t(date, -20)
 
-        return tf.convert_to_tensor(data, dtype=tf.float32)
+        data = tf.convert_to_tensor(data, dtype=tf.float32)
+        data = tf.expand_dims(data, axis=0)
+        data = tf.expand_dims(data, axis=0)
+        return data
 
     def _get_price(self, date: str, ticker: str):
-        return self.get_observation(date, ticker)["open"]
+        with open(f"{ticker}_stock.json", "r") as f:
+            data = json.load(f)
+
+        return data[date]["open"]
     
     #Returns datetime object for closest valid date after or equal to date + t
     def get_date_after_t(self, date: str, t: int):
@@ -75,7 +85,7 @@ if __name__ == "__main__":
     date = "2016-12-23"
     env = Env(10000, date)
 
-    data = env.get_observation(date, "WMT")
+    data = env.get_observation(date, "AMZN")
     
     print(tf.size(data))
     with open("out.txt", "w") as f:
