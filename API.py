@@ -15,11 +15,8 @@ def get_historic_ticker(ticker: str, start_date: str, end_date: str) -> int:
     elif len(json) == 0: return 1
 
     json = {json[i]["date"][:10]: dict({key: json[i][key] for key in list(json[i].keys())[1:]}) for i in range(len(json))} 
-    strjson = str(json).replace("\'", "\"")
     
-
-    write(strjson, f"{ticker}_stock", extension=".json")
-    return 0
+    return json
 
 def get_ticker(ticker: str) -> dict:
     headers = {
@@ -44,6 +41,20 @@ def get_ticker(ticker: str, date: str):
     #print(f"JSON for {ticker}: ", json)
     return json[0] #Get last day value
 
+def compile_dataset(stocks: list[str], start_date, end_date):
+    data = dict()
+
+    for stock in stocks:
+        data[stock]= get_historic_ticker(stock, start_date, end_date)
+
+    write("stock_data = " + str(data), "stock_data", ".py")
 
 if __name__ == "__main__":
-    get_historic_ticker("AMZN", "2000-01-01", "2025-01-01")
+    
+    stocks = [
+        "AMZN",
+        "WMT",
+        "COST"
+    ]
+
+    compile_dataset(stocks, "2000-01-01", "2025-01-01")

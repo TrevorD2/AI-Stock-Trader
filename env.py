@@ -3,7 +3,7 @@ import pandas_market_calendars as mcal
 import tensorflow as tf
 import datetime
 from portfolio import Portfolio
-import json
+from stock_data import stock_data
 
 class Env():
     def __init__(self, balance: int, start_date: str): #start_date takes the form yyyy-mm-dd
@@ -37,11 +37,10 @@ class Env():
         next_date = self.get_date_after_t(self.date, 1)
         self.date = next_date
 
-    def get_observation(self, date: str, ticker: str): # Get observation data for that date. PRECONDITION: date satisfies is_valid_date()
+    def get_observation(self, date: str, ticker: str) -> tf.Tensor: # Get observation data for that date. PRECONDITION: date satisfies is_valid_date()
         data = []
         
-        with open(f"{ticker}_stock.json", "r") as f:
-            rawdata = json.load(f)
+        rawdata = stock_data[ticker]
 
         for i in range(10):
             data.append(list(rawdata[date].values())[1:])
@@ -58,12 +57,14 @@ class Env():
         data = tf.convert_to_tensor(data, dtype=tf.float32)
         data = tf.expand_dims(data, axis=0)
         data = tf.expand_dims(data, axis=0)
-        return data
+
+        return self._normalize_observation(data)
+
+    def _normalize_observation(self, data: tf.Tensor) -> tf.Tensor:
+        return tf.sigmoid(data)
 
     def _get_price(self, date: str, ticker: str):
-        with open(f"{ticker}_stock.json", "r") as f:
-            data = json.load(f)
-
+        data = stock_data[ticker]
         return data[date]["open"]
     
     #Returns datetime object for closest valid date after or equal to date + t
