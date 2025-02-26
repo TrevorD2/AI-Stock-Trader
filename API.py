@@ -52,9 +52,12 @@ def compile_dataset(stocks: list[str], start_date, end_date):
     return df
 
 def read_data():
-    with open("stock_data.json", "r") as f:
-        json = js.load(f)
-        df = pd.json_normalize(json)
+    try:
+        with open("stock_data.json", "r") as f:
+            json = js.load(f)
+            df = pd.json_normalize(json)
+    except:
+        df = compile_dataset()
     return df
 
 def log_data():
@@ -76,3 +79,5 @@ if __name__ == "__main__":
     
     print(df.head(10))
     """
+    df = read_data()
+    print(df.head(10))
