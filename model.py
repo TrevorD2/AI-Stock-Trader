@@ -1,21 +1,9 @@
 import tensorflow as tf
 from tensorflow.keras import Model  # type: ignore
-from tensorflow.keras.layers import Dense, Flatten, Conv2D, Softmax # type: ignore
+from tensorflow.keras.layers import Dense, Softmax # type: ignore
 import numpy as np
 import math
 
-class ConvLayer(Model):
-    def __init__(self, filters: int, kernal_size: tuple, activation: str, filter_multiplier=1):
-        super().__init__()
-        self.conv1 = Conv2D(filters=filters, kernel_size=kernal_size, activation=activation, padding="same")
-        self.conv2 = Conv2D(filters=filters*filter_multiplier, kernel_size=kernal_size, activation=activation, padding="same")
-        self.flatten = Flatten()
-
-    def call(self, x):
-        conv1 = self.conv1(x)
-        conv2 = self.conv2(conv1)
-        return self.flatten(conv2)
-    
 class Q_Agent(Model):
     def __init__(self, noise_stdev: float, noise_decay: float, min_noise: float):
         super().__init__()
@@ -28,7 +16,7 @@ class Q_Agent(Model):
         self.d2 = Dense(64, activation="relu")
         self.out = Dense(2, activation="sigmoid")
 
-    #Takes output vector from ConvLayer as input, produces continuous probability distribution (mu, sigma)
+    #Takes output vector as input, produces continuous probability distribution (mu, sigma)
     def call(self, x): 
         d1 = self.d1(x)
         d2 = self.d2(d1)
@@ -63,7 +51,7 @@ class Action_Agent(Model):
 
         self.q_agent = Q_Agent(epsilon, epsilon_decay, min_epsilon)
 
-    #Takes output vector from ConvLayer as input, produces discrete probability distribution
+    #Takes output vector as input, produces discrete probability distribution
     def call(self, x): 
         d1 = self.d1(x)
         d2 = self.d2(d1)
@@ -86,18 +74,15 @@ class Action_Agent(Model):
 class Agent(Model):
     def __init__(self):
         super().__init__()
-        self.conv = ConvLayer(16, (3,3), "relu", 2)
         self.q_agent = Q_Agent(1, 0.99, 0.05)
         self.action_agent = Action_Agent(0.2, 0.99, 0.05)
 
 
     #Takes input tensor of size DxT corresponding to time-series data
     def call(self, x):
-        flatconv = self.conv(x)
+        action = self.action_agent.take_action(x)
 
-        action = self.action_agent.take_action(flatconv)
-
-        quantity = self.q_agent.take_action(flatconv, 100)
+        quantity = self.q_agent.take_action(x, 100)
 
         return (action, quantity)
     

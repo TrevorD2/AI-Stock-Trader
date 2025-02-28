@@ -5,9 +5,7 @@ import tensorflow as tf
 MAX_TIMESTEPS = 50
 
 stocks = {
-    "AMZN",
-    "WMT",
-    "COST"
+    "AMZN"
 }
 
 epsilon = 0.3
@@ -33,8 +31,7 @@ while num_timesteps <= MAX_TIMESTEPS:
     while not done and num_timesteps <= MAX_TIMESTEPS:
 
         for ticker in stocks:
-            data = env.get_observation(env.date, ticker)
-            print(data)
+            data = env.get_observation(ticker).to_numpy()
             action, q = tl_agent(data)
             day, reward, done = env.step((action, ticker, q))
 

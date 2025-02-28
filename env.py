@@ -23,7 +23,7 @@ class Env():
     def step(self, action_tuple): #action = (action, ticker, quantity)
         action, ticker, quantity = action_tuple
 
-        price = self._get_price(self.date, ticker)
+        price = self._get_price(ticker)
         self.portfolio.update_prices(ticker, price)
 
         error = 0
@@ -45,10 +45,14 @@ class Env():
         observation = (self.df.loc[self.df["date"]==self.date])
         return observation
 
+    def get_observation(self, ticker) -> pd.DataFrame:
+        observation = (self.df.loc[self.df["date"]==self.date])
+        observation = observation.loc[:, observation.columns.str.contains(ticker, case=False)]
+        return observation
 
     #Gets the real cost of ticker for current date
     def _get_price(self, ticker: str):
-        data = self.get_observation()
+        data = self.get_observation(ticker)
         return self._inverse_normalization(data[ticker+"_adjOpen"].iloc[0])
     
     #Reverses log norm (performs e^(10x))
@@ -71,17 +75,4 @@ class Env():
         return date in nyse.valid_days(start_date=date, end_date=date)
     
 if __name__ == "__main__":
-    date = "2016-12-23"
-    env = Env(10000, date)
-
-    print(env.get_observation(), type(env.get_observation()))
-    env.end_day()
-    print("\n\n")
-    print(env.get_observation())
-    env.end_day()
-    print("\n\n")
-    print(env.get_observation())
-    env.end_day()
-    print("\n\n")
-    print(env.get_observation())
-    print(env._get_price("AMZN"))
+    pass
