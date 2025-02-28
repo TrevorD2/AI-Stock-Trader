@@ -1,6 +1,7 @@
 import requests
 import json as js
 import pandas as pd
+from arch import arch_model
 import math
 
 def write(text, file="out", extension=".txt"):
@@ -65,6 +66,12 @@ def log_data():
     df = df.map(lambda x: math.log(x)/10 if (type(x)==float and x > 0) else x) #Take the log of data, divide by 10 to get data to be roughly between 0 - 10
     df.to_json("stock_data.json", orient="records")
     return df
+
+"""
+def fit_GARCH():
+    df = read_data()
+    model = arch_model(df[])
+"""
 
 if __name__ == "__main__":
     """

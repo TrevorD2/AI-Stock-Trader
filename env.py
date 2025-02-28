@@ -20,8 +20,9 @@ class Env():
         self.date = start_date
         return balance, start_date
     
-    def step(self, action_tuple): #action = (action, ticker, quantity)
-        action, ticker, quantity = action_tuple
+    def step(self, action_tuple): #action = (ticker, quantity)
+        ticker, quantity = action_tuple
+        action = 1 if quantity>0 else 2
 
         price = self._get_price(ticker)
         self.portfolio.update_prices(ticker, price)
@@ -43,12 +44,14 @@ class Env():
 
     def get_observation(self) -> pd.DataFrame: # Get observation data for current date. PRECONDITION: date satisfies is_valid_date() and self.date exists
         observation = (self.df.loc[self.df["date"]==self.date])
-        return observation
+        return observation.iloc[:, 1:]
 
+    """
     def get_observation(self, ticker) -> pd.DataFrame:
         observation = (self.df.loc[self.df["date"]==self.date])
         observation = observation.loc[:, observation.columns.str.contains(ticker, case=False)]
         return observation
+    """
 
     #Gets the real cost of ticker for current date
     def _get_price(self, ticker: str):

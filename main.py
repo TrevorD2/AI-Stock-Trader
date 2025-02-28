@@ -4,9 +4,9 @@ import tensorflow as tf
 
 MAX_TIMESTEPS = 50
 
-stocks = {
+stocks = [
     "AMZN"
-}
+]
 
 epsilon = 0.3
 epsilon_decay = 0.99
@@ -17,7 +17,7 @@ date = "2001-01-03" #Starting date
 
 env = Env(balance, date)
 
-tl_agent = Agent()
+tl_agent = Agent(1)
 
 scores = []
 num_timesteps = 0
@@ -30,10 +30,15 @@ while num_timesteps <= MAX_TIMESTEPS:
     
     while not done and num_timesteps <= MAX_TIMESTEPS:
 
-        for ticker in stocks:
-            data = env.get_observation(ticker).to_numpy()
+        action = 0
+        while True: # Repeat until agent generates <END> token
+
+            data = env.get_observation().to_numpy()
+            print(data)
             action, q = tl_agent(data)
-            day, reward, done = env.step((action, ticker, q))
+            action = action[0]
+            if action == -1: break
+            day, reward, done = env.step((stocks[action], q))
 
             if done: break
 

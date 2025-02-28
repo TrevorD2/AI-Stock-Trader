@@ -37,16 +37,19 @@ class Q_Agent(Model):
             self.noise_stdev *= self.noise_decay
 
 class Action_Agent(Model):
-    def __init__(self, epsilon: float, epsilon_decay: float, min_epsilon: float):
+    def __init__(self, number_of_stocks: int, epsilon: float, epsilon_decay: float, min_epsilon: float):
         super().__init__()
-        self.action_space = [0, 1, 2] # 0 = HOLD, 1 = BUY, 2 = SELL
+        self.action_space = [i for i in range(number_of_stocks)] # action_space[i] corresponds to the ith stock
+        self.action_space.append("<END>") # Allow the model to choose when to stop trading via an <END> token
+        self.number_of_stocks = number_of_stocks
+
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay
         self.min_epsilon = min_epsilon
 
         self.d1 = Dense(128, activation="relu")
         self.d2 = Dense(64, activation="relu")
-        self.d3 = Dense(3)
+        self.d3 = Dense(number_of_stocks+1)
         self.out = Softmax()
 
         self.q_agent = Q_Agent(epsilon, epsilon_decay, min_epsilon)
@@ -72,16 +75,17 @@ class Action_Agent(Model):
 
 
 class Agent(Model):
-    def __init__(self):
+    def __init__(self, number_of_stocks: int):
         super().__init__()
         self.q_agent = Q_Agent(1, 0.99, 0.05)
-        self.action_agent = Action_Agent(0.2, 0.99, 0.05)
+        self.action_agent = Action_Agent(number_of_stocks, 0.2, 0.99, 0.05)
+        self.number_of_stocks = number_of_stocks
 
 
     #Takes input tensor of size DxT corresponding to time-series data
     def call(self, x):
         action = self.action_agent.take_action(x)
-
+        if action == self.number_of_stocks: return (-1, 0)
         quantity = self.q_agent.take_action(x, 100)
 
         return (action, quantity)
