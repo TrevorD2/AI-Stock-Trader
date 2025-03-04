@@ -55,7 +55,7 @@ class Env():
 
     #Gets the real cost of ticker for current date
     def _get_price(self, ticker: str):
-        data = self.get_observation(ticker)
+        data = self.get_observation()
         return self._inverse_normalization(data[ticker+"_adjOpen"].iloc[0])
     
     #Reverses log norm (performs e^(10x))
