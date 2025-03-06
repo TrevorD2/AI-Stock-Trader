@@ -5,7 +5,7 @@ import datetime
 from portfolio import Portfolio
 import pandas as pd
 import math
-import numpy
+import numpy as np
 
 class Env():
     def __init__(self, balance: int, start_date: str): #start_date takes the form yyyy-mm-dd
@@ -25,7 +25,9 @@ class Env():
         action = 1 if quantity>0 else 2
 
         price = self._get_price(ticker)
+        print(f"Price of {ticker} at {self.date} = {price}")
         self.portfolio.update_prices(ticker, price)
+
 
         error = 0
         if action==1:
@@ -42,21 +44,23 @@ class Env():
         next_date = self.get_date_after_t(self.date, 1)
         self.date = next_date
 
-    def get_observation(self) -> pd.DataFrame: # Get observation data for current date. PRECONDITION: date satisfies is_valid_date() and self.date exists
+    def get_observation(self, return_type="numpy"): # Get observation data for current date. PRECONDITION: date satisfies is_valid_date() and self.date exists
         observation = (self.df.loc[self.df["date"]==self.date])
-        return observation.iloc[:, 1:]
+        array = observation.iloc[:, 1:]
 
-    """
-    def get_observation(self, ticker) -> pd.DataFrame:
-        observation = (self.df.loc[self.df["date"]==self.date])
-        observation = observation.loc[:, observation.columns.str.contains(ticker, case=False)]
-        return observation
-    """
+        if return_type == "numpy":
+            array = np.expand_dims(array, axis=0)
+        elif return_type == "pandas": pass
+        else: raise Exception("Invalid return type given: type must be \"numpy\" or \"pandas\"")
+
+        return array
+
 
     #Gets the real cost of ticker for current date
     def _get_price(self, ticker: str):
-        data = self.get_observation()
-        return self._inverse_normalization(data[ticker+"_adjOpen"].iloc[0])
+        data = self.get_observation(return_type="pandas")
+        base_price = data[ticker+"_adjOpen"].iloc[0]
+        return self._inverse_normalization(base_price)
     
     #Reverses log norm (performs e^(10x))
     def _inverse_normalization(self, log_price):
