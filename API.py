@@ -74,7 +74,6 @@ def fit_GARCH():
 """
 
 if __name__ == "__main__":
-    """
     stocks = [
         "AMZN",
     ]
@@ -85,6 +84,5 @@ if __name__ == "__main__":
     df = log_data()
     
     print(df.head(10))
-    """
     df = read_data()
     print(df.head(10))

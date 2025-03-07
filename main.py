@@ -2,7 +2,7 @@ from env import Env
 from model import Agent
 import tensorflow as tf
 
-MAX_TIMESTEPS = 1000
+MAX_TIMESTEPS = 100
 
 stocks = [
     "AMZN"
@@ -13,7 +13,7 @@ epsilon_decay = 1
 min_epsilon = 0.05
 
 balance = 100000 # 100,000
-date = "2001-01-03" #Starting date
+date = "2022-01-03" #Starting date
 
 env = Env(balance, date)
 
@@ -40,7 +40,7 @@ while num_timesteps <= MAX_TIMESTEPS:
             print(f"Agent taking {action} with quantity {q}")
             if action == len(stocks): break
             day, reward, done = env.step((stocks[action], q))
-
+            print(f"Reward for {day} is {reward}")
             if done: break
             timst+=1
             score+=reward

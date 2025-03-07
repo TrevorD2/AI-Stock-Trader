@@ -17,6 +17,7 @@ class Env():
         balance, start_date = self.init_params
         self.portfolio = Portfolio(balance)
         self.starting_balance = balance
+        self.last_balance = balance
         self.date = start_date
         return balance, start_date
     
@@ -25,7 +26,6 @@ class Env():
         action = 1 if quantity>0 else 2
 
         price = self._get_price(ticker)
-        print(f"Price of {ticker} at {self.date} = {price}")
         self.portfolio.update_prices(ticker, price)
 
 
@@ -36,7 +36,11 @@ class Env():
         elif action==2:
             error = self.portfolio.sell(ticker, price, quantity)
 
-        reward =  self.portfolio.get_portfolio_value() + self.portfolio.balance - self.starting_balance if error != -1 else error
+        current_total = self.portfolio.get_portfolio_value() + self.portfolio.balance
+        if current_total == self.last_balance: reward = 0
+        else: reward =  math.log(abs(current_total - self.last_balance))/10*(-1 if self.last_balance > current_total else 1 ) if error != -1 else -1
+
+        self.last_balance = current_total
 
         return self.date, reward, self.portfolio.balance < 0 #must return observation, reward, terminated
 
