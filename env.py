@@ -8,14 +8,14 @@ import math
 import numpy as np
 
 class Env():
-    def __init__(self, balance: int, start_date: str): #start_date takes the form yyyy-mm-dd
-        self.init_params = [balance, start_date]
+    def __init__(self, balance: int, start_date: str, stocks: list[str]): #start_date takes the form yyyy-mm-dd
+        self.init_params = [balance, start_date, stocks]
         self.df = API.read_data()
         self.reset()
         
     def reset(self):
-        balance, start_date = self.init_params
-        self.portfolio = Portfolio(balance)
+        balance, start_date, stocks = self.init_params
+        self.portfolio = Portfolio(balance, stocks)
         self.starting_balance = balance
         self.last_balance = balance
         self.date = start_date
@@ -49,9 +49,16 @@ class Env():
         self.date = next_date
 
     def get_observation(self, return_type="numpy"): # Get observation data for current date. PRECONDITION: date satisfies is_valid_date() and self.date exists
-        observation = (self.df.loc[self.df["date"]==self.date])
-        array = observation.iloc[:, 1:]
+        observation = self.df.loc[self.df["date"]==self.date].copy()
 
+        portfolio_observation = self.portfolio.get_portfolio_observation()
+        keys = ["balance", "value"] + [ticker for ticker in self.init_params[2]]
+
+        for key in range(len(keys)):
+            value = portfolio_observation[key]
+            observation.loc[:, keys[key]] = self.normalization(value) if value !=0 else value
+
+        array = observation.iloc[:, 1:]
         if return_type == "numpy":
             array = np.expand_dims(array, axis=0)
         elif return_type == "pandas": pass
@@ -66,6 +73,9 @@ class Env():
         base_price = data[ticker+"_adjOpen"].iloc[0]
         return self._inverse_normalization(base_price)
     
+    def normalization(self, price):
+        return math.log(price) / 10
+
     #Reverses log norm (performs e^(10x))
     def _inverse_normalization(self, log_price):
         return math.exp(log_price*10)

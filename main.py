@@ -15,11 +15,9 @@ min_epsilon = 0.05
 balance = 100000 # 100,000
 date = "2022-01-03" #Starting date
 
-env = Env(balance, date)
+env = Env(balance, date, stocks)
 
 tl_agent = Agent(1, epsilon=epsilon, epsilon_decay=epsilon_decay, min_epsilon=min_epsilon)
-print("ACTION SPACE: ")
-print(tl_agent.action_agent.action_space)
 scores = []
 num_timesteps = 0
 num_episodes = 0
