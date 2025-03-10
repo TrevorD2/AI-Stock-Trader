@@ -33,7 +33,7 @@ class Q_Agent(Model):
         mu*=max_shares
         sigma*=math.sqrt(max_shares)
         quantity = np.random.normal(mu, sigma) + np.random.normal(0, self.noise_stdev)
-        return int(max(quantity, 0))
+        return quantity
 
     def adjust_noise(self):
         if self.noise_stdev >= self.min_noise: 

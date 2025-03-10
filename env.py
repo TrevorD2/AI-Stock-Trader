@@ -38,7 +38,7 @@ class Env():
 
         current_total = self.portfolio.get_portfolio_value() + self.portfolio.balance
         if current_total == self.last_balance: reward = 0
-        else: reward =  math.log(abs(current_total - self.last_balance))/10*(-1 if self.last_balance > current_total else 1 ) if error != -1 else -1
+        else: reward =  math.tanh(current_total-self.last_balance) if error!=-1 else error
 
         self.last_balance = current_total
 
