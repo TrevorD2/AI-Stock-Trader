@@ -78,6 +78,20 @@ class Action_Agent(Model):
         if self.epsilon >= self.min_epsilon: 
             self.epsilon *= self.epsilon_decay
 
+class Value_Agent(Model):
+    def __init__(self):
+        super().__init__()
+        self.d1 = Dense(128, activation="relu")
+        self.d2 = Dense(64, activation="relu")
+        self.lstm = LSTM(1)
+        self.out = Dense(1, activation="tanh")
+
+    def call(self, x):
+        d1 = self.d1(x)
+        d2 = self.d2(d1)
+        lstm = self.lstm(d2)
+        out = self.out(lstm)
+        return out
 
 class Agent(Model):
     def __init__(self, number_of_stocks: int, epsilon: float, epsilon_decay: float, min_epsilon: float):
