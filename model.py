@@ -103,6 +103,13 @@ class Agent(Model):
 
     #Takes input tensor of size DxT corresponding to time-series data
     def call(self, x):
+        action = self.action_agent(x)
+        if action == self.number_of_stocks: return (action, 0)
+        quantity = self.q_agent(x)
+
+        return (action, quantity)
+    
+    def take_action(self, x):
         action = self.action_agent.take_action(x)
         if action == self.number_of_stocks: return (action, 0)
         quantity = self.q_agent.take_action(x, 100)

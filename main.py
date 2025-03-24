@@ -1,8 +1,8 @@
 from env import Env
-from model import Agent
+from model import Agent, Value_Agent
 import tensorflow as tf
 
-MAX_EPISODES = 2
+EPOCHS = 2
 MAX_TIMESTEPS = 100
 
 stocks = [
@@ -20,6 +20,7 @@ date = "2022-01-03" #Starting date
 env = Env(balance, date, stocks)
 
 tl_agent = Agent(1, epsilon=epsilon, epsilon_decay=epsilon_decay, min_epsilon=min_epsilon)
+critic = Value_Agent()
 scores = []
 num_episodes = 0
 
@@ -42,6 +43,12 @@ def compute_loss(action_probs, values, returns):
 def train_step():
     action_probs, values, rewards = run_episode()
     returns = get_expected_return(rewards, gamma)
+
+def ppo_update(actor, critic, optimizer_actor, optimizer_critic, states, actions, log_probs_old, returns, advantages):
+    for _ in range(EPOCHS):
+        pass
+
+def preprocess(states, actions, rewards, dones, values, gamma): pass
 
 def run_episode():
     rewards = []
@@ -72,12 +79,61 @@ def run_episode():
 
     scores.append(score)
 
-def train_step(self, prediction, label): pass
-     
-
-while num_episodes < MAX_EPISODES:
+while num_episodes < EPOCHS:
     score = 0
     num_episodes+=1
 
     print(f"Episode: {num_episodes}, score: {score}, epsilon: {tl_agent.action_agent.epsilon}")
     print(f"Portfolio: {env.portfolio.get_portfolio_value()}, Balance: {env.portfolio.balance}, Stocks: {env.portfolio.stocks}, Prices: {env.portfolio.current_prices}")
+
+agent = Agent(1, epsilon=epsilon, epsilon_decay=epsilon_decay, min_epsilon=min_epsilon)
+critic = Value_Agent()
+
+episodes = 10
+steps = 1_000
+
+for episode in range(episodes):
+    done = False
+    bal, date = env.reset()
+    state = env.get_observation()
+    actor_loss = []
+    critic_loss = []
+    rewards = []
+    states = []
+    actions = []
+    probs = []
+    dones = []
+    values = []
+
+    for step in range(steps):
+        action = agent.take_action(state)
+        value = critic(state)
+
+        _, reward, done = env.step(action)
+        next_state = env.get_observation()
+
+        dones.append(1-done)
+        rewards.append(reward)
+        states.append(state)
+        actions.append(action)
+
+        prob = agent(state)
+        probs.append(prob)
+        values.append(value)
+        state = next_state
+
+        if done:
+            env.reset()
+            state = env.get_observation()
+    
+    value = critic(state)
+    values.append(value)
+
+    states, actions, returns, advantage = preprocess(states, actions, rewards, dones, values, 0.995)
+
+    for epochs in range(EPOCHS):
+        #TRAIN STEP
+        pass
+
+
+    #TEST
