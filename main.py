@@ -1,6 +1,7 @@
 from env import Env
 from model import Agent, Value_Agent
 import tensorflow as tf
+import numpy as np
 
 EPOCHS = 2
 MAX_TIMESTEPS = 100
@@ -48,7 +49,24 @@ def ppo_update(actor, critic, optimizer_actor, optimizer_critic, states, actions
     for _ in range(EPOCHS):
         pass
 
-def preprocess(states, actions, rewards, dones, values, gamma): pass
+def preprocess(states, actions, rewards, dones, values, gamma):
+    g = 0
+    lmbda = 0.95
+    returns = []
+    for i in reversed(range(len(rewards))):
+        delta = rewards[i] + gamma * values[i+1] * done[i] - values[i]
+        g = delta + gamma * lmbda * dones[i] * g
+        returns.append(g + values[i])
+
+    returns.revserse()
+    advantages = np.array(returns, dtype=np.float32) - values[:-1]
+    advantages = (advantages - np.mean(advantages)) / (np.std(advantages) + 1e-10)
+    states = np.array(states, dtype=np.float32)
+    actions = np.array(actions, dtype=np.float32)
+    returns = np.array(returns, dtype=np.float32)
+
+    return states, actions, returns, advantages
+
 
 def run_episode():
     rewards = []

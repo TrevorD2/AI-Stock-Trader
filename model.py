@@ -93,13 +93,17 @@ class Value_Agent(Model):
         out = self.out(lstm)
         return out
 
-class Agent(Model):
-    def __init__(self, number_of_stocks: int, epsilon: float, epsilon_decay: float, min_epsilon: float):
+class Actor_Critic(Model):
+    def __init__(self,  number_of_stocks: int, epsilon: float, epsilon_decay: float, min_epsilon: float, lra: float, lrc: float):
         super().__init__()
         self.q_agent = Q_Agent(1, 0.99, 0.05)
         self.action_agent = Action_Agent(number_of_stocks, epsilon=epsilon, epsilon_decay=epsilon_decay, min_epsilon=min_epsilon)
         self.number_of_stocks = number_of_stocks
 
+        self.critic = Value_Agent()
+        self.actor_optimizer = tf.keras.optimizers.Adam(learning_rate=lra)
+        self.critic_optimizer = tf.keras.optimizers.Adam(learning_rate=lrc)
+        self.clip_param = 0.2
 
     #Takes input tensor of size DxT corresponding to time-series data
     def call(self, x):
@@ -120,3 +124,15 @@ class Agent(Model):
         self.q_agent.adjust_noise()
         self.action_agent.adjust_epsilon()
 
+    def learn(self, states, actions, advantages, old_probs, discount_rewards):
+        with tf.GradientTape() as tape1, tf.GradientTape() as tape2:
+            actionprobs = self.action_agent(states, training=True)
+            qprobs = self.q_agent(states, training=True)
+            vals = self.critic(states, trainign=True)
+
+            diff = tf.math.subtract(discount_rewards, vals)
+
+            critic_loss = 0.5*tf.keras.losses.MSE(discount_rewards, vals)
+            actor_loss = self.actor_loss(probs, actions, advantages, old_probs, critic_loss)
+
+        grads1 = tape1.gradient(actor_loss, self.act)
