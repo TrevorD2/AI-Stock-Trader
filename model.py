@@ -56,8 +56,6 @@ class Action_Agent(Model):
         self.d3 = Dense(number_of_stocks+1)
         self.out = Softmax()
 
-        self.q_agent = Q_Agent(epsilon, epsilon_decay, min_epsilon)
-
     #Takes output vector as input, produces discrete probability distribution
     def call(self, x): 
         d1 = self.d1(x)
@@ -108,7 +106,6 @@ class Actor_Critic(Model):
     #Takes input tensor of size DxT corresponding to time-series data
     def call(self, x):
         action = self.action_agent(x)
-        if action == self.number_of_stocks: return (action, 0)
         quantity = self.q_agent(x)
 
         return (action, quantity)
@@ -125,6 +122,64 @@ class Actor_Critic(Model):
         self.action_agent.adjust_epsilon()
 
     def learn(self, states, actions, advantages, old_probs, discount_rewards):
+
+        tickers = actions[:, 0]
+        tickers = tf.cast(tickers, tf.int32)
+
+        old_probs_tensor = tf.convert_to_tensor(np.array(old_probs), dtype=tf.float32)
+        if len(old_probs_tensor.shape) == 3 and old_probs_tensor.shape[1] == 1:
+            old_probs_tensor = tf.squeeze(old_probs_tensor, axis=1)
+
+        states_tensor = tf.convert_to_tensor(np.array(states), dtype=tf.float32)
+        if len(states_tensor.shape) == 4 and states_tensor.shape[1]==1:
+            states_tensor = tf.squeeze(states_tensor, axis=1)
+
+        with tf.GradientTape() as tape1, tf.GradientTape() as tape2:
+            # Forward pass through the action agent to get discrete action probabilities.
+            #print("IN GRADIENT TAPE")
+            action_probs = self.action_agent(states_tensor, training=True)
+            #print(action_probs)
+            # For each state in the batch, gather the probability of the taken action.
+            batch_indices = tf.range(tf.shape(action_probs)[0])
+            indices = tf.stack([batch_indices, tickers], axis=1)
+            current_probs = tf.gather_nd(action_probs, indices)
+            
+            old_current_probs = tf.gather_nd(old_probs_tensor, indices)
+
+            """
+            print(type(current_probs), current_probs.shape)
+            print(current_probs)
+            print(type(old_current_probs))
+            print(old_current_probs)
+            """
+
+            # Compute the ratio between current and old probabilities.
+            ratios = current_probs / (old_current_probs + 1e-10)
+            
+            # PPO surrogate objective (clipped version).
+            surr1 = ratios * advantages
+            surr2 = tf.clip_by_value(ratios, 1 - self.clip_param, 1 + self.clip_param) * advantages
+            actor_loss = -tf.reduce_mean(tf.minimum(surr1, surr2))
+            
+            # Critic loss: mean-squared error between the discounted rewards and estimated values.
+            values = self.critic(states_tensor, training=True)
+            critic_loss = 0.5 * tf.reduce_mean(tf.square(discount_rewards - values))
+            
+        # Get the trainable variables for the actor (here, both the action agent and the q-agent).
+        actor_vars = self.action_agent.trainable_variables + self.q_agent.trainable_variables
+        
+        # Compute gradients.
+        actor_grads = tape1.gradient(actor_loss, actor_vars)
+        critic_grads = tape2.gradient(critic_loss, self.critic.trainable_variables)
+        
+        # Apply gradients with the respective optimizers.
+        self.actor_optimizer.apply_gradients(zip(actor_grads, actor_vars))
+        self.critic_optimizer.apply_gradients(zip(critic_grads, self.critic.trainable_variables))
+        
+        return actor_loss, critic_loss
+
+"""
+    def learn(self, states, actions, advantages, old_probs, discount_rewards):
         with tf.GradientTape() as tape1, tf.GradientTape() as tape2:
             actionprobs = self.action_agent(states, training=True)
             qprobs = self.q_agent(states, training=True)
@@ -136,3 +191,5 @@ class Actor_Critic(Model):
             actor_loss = self.actor_loss(probs, actions, advantages, old_probs, critic_loss)
 
         grads1 = tape1.gradient(actor_loss, self.act)
+"""
+    

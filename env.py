@@ -19,14 +19,21 @@ class Env():
         self.starting_balance = balance
         self.last_balance = balance
         self.date = start_date
+        self.stocks = stocks
         return balance, start_date
     
     def step(self, action_tuple): #action = (ticker, quantity)
         ticker, quantity = action_tuple
-        action = 1 if quantity>0 else 2
 
-        price = self._get_price(ticker)
-        self.portfolio.update_prices(ticker, price)
+        if quantity == 0: action = -1
+        elif quantity > 0: action = 1
+        else: action = 2
+
+        ticker = self.stocks[ticker] if ticker < len(self.stocks) else -1
+
+        if ticker!=-1:
+            price = self._get_price(ticker)
+            self.portfolio.update_prices(ticker, price)
 
 
         error = 0
@@ -56,7 +63,7 @@ class Env():
 
         for key in range(len(keys)):
             value = portfolio_observation[key]
-            observation.loc[:, keys[key]] = self.normalization(value) if value !=0 else value
+            observation.loc[:, keys[key]] = self.normalization(value) if value >0 else 0
 
         array = observation.iloc[:, 1:]
         if return_type == "numpy":

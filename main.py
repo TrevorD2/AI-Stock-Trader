@@ -1,9 +1,13 @@
+print("STARTING")
+
 from env import Env
-from model import Agent, Value_Agent
+from model import Actor_Critic
 import tensorflow as tf
 import numpy as np
 
-EPOCHS = 2
+print("LOADED PACKAGES")
+
+EPOCHS = 5
 MAX_TIMESTEPS = 100
 
 stocks = [
@@ -20,16 +24,7 @@ date = "2022-01-03" #Starting date
 
 env = Env(balance, date, stocks)
 
-tl_agent = Agent(1, epsilon=epsilon, epsilon_decay=epsilon_decay, min_epsilon=min_epsilon)
-critic = Value_Agent()
-scores = []
-num_episodes = 0
-
-
-optimizer = tf.keras.optimizers.Adam()
-
-def get_expected_return(rewards, gamma):
-    pass
+print("CREATED ENV")
 
 def compute_loss(action_probs, values, returns):
     advantage = returns - values
@@ -41,24 +36,16 @@ def compute_loss(action_probs, values, returns):
 
     return ppo_loss, value_loss
 
-def train_step():
-    action_probs, values, rewards = run_episode()
-    returns = get_expected_return(rewards, gamma)
-
-def ppo_update(actor, critic, optimizer_actor, optimizer_critic, states, actions, log_probs_old, returns, advantages):
-    for _ in range(EPOCHS):
-        pass
-
 def preprocess(states, actions, rewards, dones, values, gamma):
     g = 0
     lmbda = 0.95
     returns = []
     for i in reversed(range(len(rewards))):
-        delta = rewards[i] + gamma * values[i+1] * done[i] - values[i]
+        delta = rewards[i] + gamma * values[i+1] * dones[i] - values[i]
         g = delta + gamma * lmbda * dones[i] * g
         returns.append(g + values[i])
 
-    returns.revserse()
+    returns.reverse()
     advantages = np.array(returns, dtype=np.float32) - values[:-1]
     advantages = (advantages - np.mean(advantages)) / (np.std(advantages) + 1e-10)
     states = np.array(states, dtype=np.float32)
@@ -68,47 +55,34 @@ def preprocess(states, actions, rewards, dones, values, gamma):
     return states, actions, returns, advantages
 
 
-def run_episode():
-    rewards = []
+def run_episode(env, agent, steps):
     bal, date = env.reset()
-    score = 0
     done = False
-    num_timesteps = 0
-    
-    while not done and num_timesteps < MAX_TIMESTEPS:
+    state = env.get_observation()
+    total_reward = 0
+    for step in range(steps):
+        action = agent.take_action(state)
 
-        action = 0
-        while True: # Repeat until agent generates <END> token
+        _, reward, done = env.step(action)
+        total_reward+=reward
+        if done: break
+        state = env.get_observation()
 
-            data = env.get_observation()
-            action, q = tl_agent(data)
-            if action == len(stocks): break
+    print(f"Total reward: {total_reward}")
 
-            day, reward, done = env.step((stocks[action], q))
-            rewards.append(reward)
+def test(env, agent, epochs, steps):
+    for epoch in range(epochs):
+        run_episode(env, agent, steps)
 
-            if done: break
+actor = Actor_Critic(1, epsilon=epsilon, epsilon_decay=epsilon_decay, min_epsilon=min_epsilon, lra=0.9, lrc=0.9)
+agent = actor.action_agent
+critic = actor.critic
 
-            score+=reward
-            num_timesteps+=1
-
-        env.end_day()
-        tl_agent.adjust_epsilon()
-
-    scores.append(score)
-
-while num_episodes < EPOCHS:
-    score = 0
-    num_episodes+=1
-
-    print(f"Episode: {num_episodes}, score: {score}, epsilon: {tl_agent.action_agent.epsilon}")
-    print(f"Portfolio: {env.portfolio.get_portfolio_value()}, Balance: {env.portfolio.balance}, Stocks: {env.portfolio.stocks}, Prices: {env.portfolio.current_prices}")
-
-agent = Agent(1, epsilon=epsilon, epsilon_decay=epsilon_decay, min_epsilon=min_epsilon)
-critic = Value_Agent()
-
-episodes = 10
+episodes = 5
 steps = 1_000
+
+print("BEFORE TRAINING")
+test(env, actor, episodes, steps)
 
 for episode in range(episodes):
     done = False
@@ -124,7 +98,7 @@ for episode in range(episodes):
     values = []
 
     for step in range(steps):
-        action = agent.take_action(state)
+        action = actor.take_action(state)
         value = critic(state)
 
         _, reward, done = env.step(action)
@@ -147,11 +121,11 @@ for episode in range(episodes):
     value = critic(state)
     values.append(value)
 
-    states, actions, returns, advantage = preprocess(states, actions, rewards, dones, values, 0.995)
+    states, actions, returns, advantages = preprocess(states, actions, rewards, dones, values, 0.995)
 
-    for epochs in range(EPOCHS):
-        #TRAIN STEP
-        pass
+    for epoch in range(EPOCHS):
+        print(f"EPOCH: {epoch}")
+        actor.learn(states, actions, advantages, probs, returns)
 
-
-    #TEST
+print("AFTER TRAINING")
+test(env, actor, episodes, steps)
