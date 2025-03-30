@@ -14,8 +14,8 @@ stocks = [
     "AMZN"
 ]
 
-epsilon = 1
-epsilon_decay = 1
+epsilon = 0.9
+epsilon_decay = 0.95
 min_epsilon = 0.05
 gamma = 0.95
 
@@ -49,42 +49,48 @@ def preprocess(states, actions, rewards, dones, values, gamma):
     advantages = np.array(returns, dtype=np.float32) - values[:-1]
     advantages = (advantages - np.mean(advantages)) / (np.std(advantages) + 1e-10)
     states = np.array(states, dtype=np.float32)
+    print(actions[:10], actions[len(actions)-10:])
     actions = np.array(actions, dtype=np.float32)
     returns = np.array(returns, dtype=np.float32)
 
     return states, actions, returns, advantages
 
 
-def run_episode(env, agent, steps):
+def run_episode(env, actor, steps):
     bal, date = env.reset()
+    actor.set_epsilon(0.9)
     done = False
     state = env.get_observation()
     total_reward = 0
     for step in range(steps):
-        action = agent.take_action(state)
-
+        if step % 2000 == 0: print(f"Epsilon for {step} : {actor.action_agent.epsilon}")
+        action = actor.take_action(state)
         _, reward, done = env.step(action)
         total_reward+=reward
         if done: break
         state = env.get_observation()
+        actor.adjust_epsilon()
 
-    print(f"Total reward: {total_reward}")
+    return total_reward
 
-def test(env, agent, epochs, steps):
+def test(env, actor, epochs, steps):
     for epoch in range(epochs):
-        run_episode(env, agent, steps)
+        print("EPOCH:", epoch)
+        reward = run_episode(env, actor, steps)
+        print(f"Reward for epoch {epoch} : {reward} ")
 
-actor = Actor_Critic(1, epsilon=epsilon, epsilon_decay=epsilon_decay, min_epsilon=min_epsilon, lra=0.9, lrc=0.9)
+actor = Actor_Critic(1, epsilon=epsilon, epsilon_decay=epsilon_decay, min_epsilon=min_epsilon, lra=0.01, lrc=0.01)
 agent = actor.action_agent
 critic = actor.critic
 
-episodes = 5
-steps = 1_000
+episodes = 1
+steps = 5_000
 
 print("BEFORE TRAINING")
 test(env, actor, episodes, steps)
 
 for episode in range(episodes):
+    actor.set_epsilon(0.9)
     done = False
     bal, date = env.reset()
     state = env.get_observation()
@@ -117,6 +123,7 @@ for episode in range(episodes):
         if done:
             env.reset()
             state = env.get_observation()
+        actor.adjust_epsilon()
     
     value = critic(state)
     values.append(value)

@@ -24,17 +24,16 @@ class Env():
     
     def step(self, action_tuple): #action = (ticker, quantity)
         ticker, quantity = action_tuple
-
+        ticker = int(ticker)
         if quantity == 0: action = -1
         elif quantity > 0: action = 1
         else: action = 2
-
+        
         ticker = self.stocks[ticker] if ticker < len(self.stocks) else -1
 
         if ticker!=-1:
             price = self._get_price(ticker)
             self.portfolio.update_prices(ticker, price)
-
 
         error = 0
         if action==1:

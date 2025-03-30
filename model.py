@@ -121,6 +121,11 @@ class Actor_Critic(Model):
         self.q_agent.adjust_noise()
         self.action_agent.adjust_epsilon()
 
+    def set_epsilon(self, epsilon):
+        self.q_agent.noise_stdev = epsilon
+        self.action_agent.epsilon = epsilon
+
+
     def learn(self, states, actions, advantages, old_probs, discount_rewards):
 
         tickers = actions[:, 0]
