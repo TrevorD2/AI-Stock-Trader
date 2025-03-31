@@ -69,7 +69,7 @@ class Action_Agent(Model):
         if np.random.random() <= self.epsilon: 
             action = np.random.choice(self.action_space)
 
-        else: action = np.argmax(self(data), axis=1)
+        else: action = np.argmax(self(data), axis=1)[0]
         return action
 
     def adjust_epsilon(self):

@@ -49,7 +49,6 @@ def preprocess(states, actions, rewards, dones, values, gamma):
     advantages = np.array(returns, dtype=np.float32) - values[:-1]
     advantages = (advantages - np.mean(advantages)) / (np.std(advantages) + 1e-10)
     states = np.array(states, dtype=np.float32)
-    print(actions[:10], actions[len(actions)-10:])
     actions = np.array(actions, dtype=np.float32)
     returns = np.array(returns, dtype=np.float32)
 
@@ -63,7 +62,6 @@ def run_episode(env, actor, steps):
     state = env.get_observation()
     total_reward = 0
     for step in range(steps):
-        if step % 2000 == 0: print(f"Epsilon for {step} : {actor.action_agent.epsilon}")
         action = actor.take_action(state)
         _, reward, done = env.step(action)
         total_reward+=reward
@@ -79,15 +77,20 @@ def test(env, actor, epochs, steps):
         reward = run_episode(env, actor, steps)
         print(f"Reward for epoch {epoch} : {reward} ")
 
-actor = Actor_Critic(1, epsilon=epsilon, epsilon_decay=epsilon_decay, min_epsilon=min_epsilon, lra=0.01, lrc=0.01)
+actor = Actor_Critic(1, epsilon=epsilon, epsilon_decay=epsilon_decay, min_epsilon=min_epsilon, lra=0.001, lrc=0.001)
 agent = actor.action_agent
 critic = actor.critic
 
-episodes = 1
-steps = 5_000
+episodes = 5
+steps = 500
 
 print("BEFORE TRAINING")
+
+
 test(env, actor, episodes, steps)
+
+initweights = actor.action_agent.d3.get_weights()
+print(initweights)
 
 for episode in range(episodes):
     actor.set_epsilon(0.9)
@@ -136,3 +139,7 @@ for episode in range(episodes):
 
 print("AFTER TRAINING")
 test(env, actor, episodes, steps)
+
+print("WEIGHTS")
+print(initweights, "\n\n")
+print(actor.action_agent.d3.get_weights())

@@ -1,7 +1,6 @@
 import requests
 import json as js
 import pandas as pd
-from arch import arch_model
 import math
 
 def write(text, file="out", extension=".txt"):
