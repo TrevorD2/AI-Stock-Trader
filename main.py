@@ -55,19 +55,20 @@ def preprocess(states, actions, rewards, dones, values, gamma):
     return states, actions, returns, advantages
 
 
-def run_episode(env, actor, steps):
+def run_episode(env, actor, steps, output=False):
     bal, date = env.reset()
-    actor.set_epsilon(0.9)
     done = False
     state = env.get_observation()
     total_reward = 0
     for step in range(steps):
         action = actor.take_action(state)
         _, reward, done = env.step(action)
+
+        if output:
+            print(f"Date: {env.date}, Step: {step}, Action: {action}, Reward: {reward}")
         total_reward+=reward
         if done: break
         state = env.get_observation()
-        actor.adjust_epsilon()
 
     return total_reward
 
@@ -77,7 +78,7 @@ def test(env, actor, epochs, steps):
         reward = run_episode(env, actor, steps)
         print(f"Reward for epoch {epoch} : {reward} ")
 
-actor = Actor_Critic(1, epsilon=epsilon, epsilon_decay=epsilon_decay, min_epsilon=min_epsilon, lra=0.001, lrc=0.001)
+actor = Actor_Critic(1, epsilon=epsilon, epsilon_decay=epsilon_decay, min_epsilon=min_epsilon, lra=0.01, lrc=0.01)
 agent = actor.action_agent
 critic = actor.critic
 
@@ -88,6 +89,7 @@ print("BEFORE TRAINING")
 
 
 test(env, actor, episodes, steps)
+run_episode(env, actor, steps, output=True)
 
 initweights = actor.action_agent.d3.get_weights()
 print(initweights)
@@ -139,6 +141,8 @@ for episode in range(episodes):
 
 print("AFTER TRAINING")
 test(env, actor, episodes, steps)
+run_episode(env, actor, steps, output=True)
+
 
 print("WEIGHTS")
 print(initweights, "\n\n")

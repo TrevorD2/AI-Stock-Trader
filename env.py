@@ -25,6 +25,7 @@ class Env():
     def step(self, action_tuple): #action = (ticker, quantity)
         ticker, quantity = action_tuple
         ticker = int(ticker)
+
         if quantity == 0: action = -1
         elif quantity > 0: action = 1
         else: action = 2
@@ -34,6 +35,12 @@ class Env():
         if ticker!=-1:
             price = self._get_price(ticker)
             self.portfolio.update_prices(ticker, price)
+        else:
+            self.end_day()
+
+            for ticker in self.stocks:
+                price = self._get_price(ticker)
+                self.portfolio.update_prices(ticker, price)
 
         error = 0
         if action==1:
@@ -44,7 +51,7 @@ class Env():
 
         current_total = self.portfolio.get_portfolio_value() + self.portfolio.balance
         if current_total == self.last_balance: reward = 0
-        else: reward =  math.tanh(current_total-self.last_balance) if error!=-1 else error
+        else: reward =  current_total-self.last_balance if error!=-1 else error*100
 
         self.last_balance = current_total
 
