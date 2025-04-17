@@ -43,12 +43,18 @@ def get_ticker(ticker: str, date: str):
     return json[0] #Get last day value
 
 def compile_dataset(stocks: list[str], start_date, end_date):
-    data = []
-
-    for stock in stocks:
-        data.extend(get_historic_ticker(stock, start_date, end_date))
-
+    
+    data = get_historic_ticker(stocks[0], start_date, end_date)
     df = pd.json_normalize(data)
+
+    for stock in stocks[1:]:
+        new_data = get_historic_ticker(stock, start_date, end_date)
+        new_df = pd.json_normalize(new_data)
+
+        #Remove date column and concatenate to dataframe
+        new_df.drop(new_df.columns[0], axis=1, inplace=True)
+        df = pd.concat([df, new_df], axis=1)
+
     return df
 
 def read_data():
@@ -75,6 +81,8 @@ def fit_GARCH():
 if __name__ == "__main__":
     stocks = [
         "AMZN",
+        "GOOGL",
+        "EA"
     ]
 
     df = compile_dataset(stocks, "2000-01-01", "2025-01-01")

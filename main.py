@@ -1,17 +1,16 @@
-print("STARTING")
-
 from env import Env
 from model import Actor_Critic
 import tensorflow as tf
 import numpy as np
-
-print("LOADED PACKAGES")
+import matplotlib.pyplot as plt
 
 EPOCHS = 5
 MAX_TIMESTEPS = 100
 
 stocks = [
-    "AMZN"
+    "AMZN",
+    "GOOGL",
+    "EA"
 ]
 
 epsilon = 0.9
@@ -20,21 +19,9 @@ min_epsilon = 0.05
 gamma = 0.95
 
 balance = 100000 # 100,000
-date = "2022-01-03" #Starting date
+date = "2011-01-03" #Starting date
 
 env = Env(balance, date, stocks)
-
-print("CREATED ENV")
-
-def compute_loss(action_probs, values, returns):
-    advantage = returns - values
-
-    log_probs = tf.math.log(action_probs)
-
-    ppo_loss = 0
-    value_loss = tf.keras.losses.MSE(values, returns)
-
-    return ppo_loss, value_loss
 
 def preprocess(states, actions, rewards, dones, values, gamma):
     g = 0
@@ -55,8 +42,9 @@ def preprocess(states, actions, rewards, dones, values, gamma):
     return states, actions, returns, advantages
 
 
-def run_episode(env, actor, steps, output=False):
+def run_episode(env, actor, steps, output=False, graph=False):
     bal, date = env.reset()
+    if graph: datapoints = []
     done = False
     state = env.get_observation()
     total_reward = 0
@@ -66,10 +54,17 @@ def run_episode(env, actor, steps, output=False):
 
         if output:
             print(f"Date: {env.date}, Step: {step}, Action: {action}, Reward: {reward}")
+        if graph:
+            datapoints.append((env.date, env.portfolio.get_portfolio_value() + env.portfolio.balance))
         total_reward+=reward
         if done: break
         state = env.get_observation()
 
+    if graph:
+        print("GRAPHING")
+        plt.plot([i[0] for i in datapoints], [i[1] for i in datapoints])
+        plt.show()
+        print("COMPLETED GRAPH")
     return total_reward
 
 def test(env, actor, epochs, steps):
@@ -78,18 +73,18 @@ def test(env, actor, epochs, steps):
         reward = run_episode(env, actor, steps)
         print(f"Reward for epoch {epoch} : {reward} ")
 
-actor = Actor_Critic(1, epsilon=epsilon, epsilon_decay=epsilon_decay, min_epsilon=min_epsilon, lra=0.01, lrc=0.01)
+actor = Actor_Critic(number_of_stocks=len(stocks), epsilon=epsilon, epsilon_decay=epsilon_decay, min_epsilon=min_epsilon, lra=0.01, lrc=0.01)
 agent = actor.action_agent
 critic = actor.critic
 
-episodes = 5
-steps = 500
+episodes = 10
+steps = 1000
 
 print("BEFORE TRAINING")
 
 
 test(env, actor, episodes, steps)
-run_episode(env, actor, steps, output=True)
+run_episode(env, actor, steps, graph=True)
 
 initweights = actor.action_agent.d3.get_weights()
 print(initweights)
@@ -141,7 +136,7 @@ for episode in range(episodes):
 
 print("AFTER TRAINING")
 test(env, actor, episodes, steps)
-run_episode(env, actor, steps, output=True)
+run_episode(env, actor, steps, graph=True)
 
 
 print("WEIGHTS")
