@@ -1,6 +1,6 @@
 class Portfolio():
     def __init__(self, balance: int, input_stocks: list[str]):
-        self.stocks = dict() #Contains {ticker: quantity}
+        self.stocks = dict() #C ontains {ticker: quantity}
 
         for stock in input_stocks:
             self.stocks[stock] = 0
@@ -14,7 +14,6 @@ class Portfolio():
         for stock in input_stocks:
             self.current_prices[stock] = 0
 
-    # ADD ERROR HANDLING
     def get_portfolio_value(self):
         value = 0
 
